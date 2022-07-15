@@ -2,16 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_digits
 digits=load_digits()
-import pylab as pl
-pl.gray()
-pl.matshow(digits.images[0])
-pl.show()
+images_and_labels=list(zip(digits.images,digits.target))
+plt.figure(figsize=(5,5))
+for index,(image,label) in enumerate(images_and_labels[:15]):
+    plt.subplot(3,5,index+1)
+    plt.axis('off')
+    plt.imshow(image,cmap=plt.cm.gray_r,interpolation='nearest')
+    plt.title('%i' % label)
 #Define variables
 n_samples=len(digits.images)
-print(n_samples)
+print("Number of samples in the data set is :"+ str(n_samples))
 
 x=digits.images.reshape((n_samples,-1))
+print("Shape of input matrix x is : "+str(x.shape))
 y=digits.target
+print("Shape of target vector y is :"+str(y.shape))
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 0)
 # Feature Scaling
@@ -70,20 +75,6 @@ def sigmoid(Z):
 
 def relu(Z):
     return relu_(Z),Z
-
-def linear_activation_forward(A_prev,W,b,activation):
-    if activation == "sigmoid":
-        Z, linear_cache = linear_forward(A_prev,W,b)
-        A, activation_cache = sigmoid(Z)
-        
-    elif activation == "relu":
-        Z, linear_cache = linear_forward(A_prev,W,b)
-        A, activation_cache = relu(Z)
-        
-    assert (A.shape == (W.shape[0], A_prev.shape[1]))
-    cache = (linear_cache, activation_cache)
-    
-    return A, cache
 def linear_activation_forward(A_prev,W,b,activation):
     if activation == "sigmoid":
         Z, linear_cache = linear_forward(A_prev,W,b)
@@ -110,7 +101,6 @@ def L_model_forward(X, parameters):
     caches.append(cache)
     #assert(AL.shape == (1,X.shape[1]))
     return AL, caches
-
 # cost function
 def compute_cost(AL, Y):
     m=Y.shape[1]
@@ -118,7 +108,6 @@ def compute_cost(AL, Y):
     cost=np.squeeze(cost)
     assert(cost.shape == ())
     return cost
-
 def linear_backward(dZ, cache):
     A_prev, W, b = cache
     m = A_prev.shape[1]
@@ -131,13 +120,10 @@ def linear_backward(dZ, cache):
     assert (db.shape == b.shape)
     
     return dA_prev, dW, db
-
 def relu_backward(dA,activation_cache):
     return dA* drelu_(activation_cache)
-    
 def sigmoid_backward(dA,activation_cache):
     return dA* dsigmoid_(activation_cache)
-
 def linear_activation_backward(dA, cache, activation):
     linear_cache, activation_cache = cache
     if activation == "relu":
@@ -148,7 +134,6 @@ def linear_activation_backward(dA, cache, activation):
         dZ = sigmoid_backward(dA,activation_cache)
         dA_prev, dW, db = linear_backward(dZ,linear_cache)
     return dA_prev,dW,db
-
 # back propogation for L layers
 def L_model_backward(AL, Y, caches):
     grads = {}
@@ -168,7 +153,6 @@ def L_model_backward(AL, Y, caches):
         grads["dW" + str(l + 1)] = dW_temp
         grads["db" + str(l + 1)] = db_temp
     return grads
-
 #update parameters
 def update_parameters(parameters, grads, learning_rate):
     L = len(parameters) // 2 
@@ -176,7 +160,6 @@ def update_parameters(parameters, grads, learning_rate):
         parameters["W" + str(l+1)] = parameters["W" + str(l+1)]-(learning_rate)*grads["dW"+str(l+1)] 
         parameters["b" + str(l+1)] = parameters["b" + str(l+1)]-(learning_rate)*grads["db"+str(l+1)]
     return parameters
-
 # N layer neural network
 layers_dims=[n_x,60,10,10]
 
@@ -203,29 +186,24 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.005, num_iterations = 300
     plt.show()
     
     return parameters
-
 parameters = L_layer_model(X_train, Y_train_, layers_dims, num_iterations = 50000, print_cost = False)
-
 def predict_L_layer(X,parameters):
     AL,caches=L_model_forward(X,parameters)
     prediction=np.argmax(AL,axis=0)
     return prediction.reshape(1,prediction.shape[0])
-
-predictions_train_L = predict_L_layer(X_train, parameters)
-
 predictions_test_L=predict_L_layer(X_test,parameters)
-
-print("Testing Accuracy : "+ str(np.sum(predictions_test_L==y_test)/y))
-
+print("Testing Accuracy : "+ str(np.sum(predictions_test_L==y_test)/y_test.shape[1] * 100)+" %")
 import random
+for j in range(2):
+    i=random.randint(0,n_samples)
+    pl.gray()
+    pl.matshow(digits.images[i])
+    pl.show()
+    img=digits.images[i].reshape((64,1)).T
+    img = sc.transform(img)
+    img=img.T
+    predicted_digit=predict_L_layer(img,parameters)
+    print('Predicted digit is : '+str(predicted_digit))
+    print('True digit is: '+ str(y[i]))
 
-i=random.randint(0,n_samples)
-pl.gray()
-pl.matshow(digits.images[i])
-pl.show()
-img=digits.images[i].reshape((64,1)).T
-img = sc.transform(img)
-img=img.T
-predicted_digit=predict_L_layer(img,parameters)
-print('Predicted digit is : '+str(predicted_digit))
-print('True digit is: '+ str(y[i]))
+
